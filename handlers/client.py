@@ -90,21 +90,27 @@ async def client_injuries(message: Message, state: FSMContext):
 @router.message(ClientRegistration.goals)
 async def client_goals(message: Message, state: FSMContext):
     data = await state.get_data()
-    data["goals"] = message.text.strip()
-    data["registered"] = 1
-    await db.upsert_client(message.from_user.id, **data)
+    client_data = {
+        "trainer_chat_id": data.get("trainer_chat_id"),
+        "full_name": data.get("full_name"),
+        "phone": data.get("phone"),
+        "email": data.get("email"),
+        "injuries": data.get("injuries"),
+        "goals": message.text.strip(),
+        "registered": 1
+    }
+    await db.upsert_client(message.from_user.id, **client_data)
     await state.clear()
-    injuries_text = data.get("injuries") or "нет"
-    # Get trainer name
-    trainer = await db.get_trainer(data["trainer_chat_id"])
+    # Получаем имя тренера для красивого ответа
+    trainer = await db.get_trainer(client_data["trainer_chat_id"])
     trainer_name = trainer["full_name"] if trainer else "—"
     await message.answer(
         f"✅ <b>Профиль сохранён!</b>\n\n"
-        f"👤 {data['full_name']}\n"
-        f"📞 {data['phone']}\n"
-        f"📧 {data['email']}\n"
-        f"🩹 Травмы: {injuries_text}\n"
-        f"🎯 Цель: {data['goals']}\n\n"
+        f"👤 {client_data['full_name']}\n"
+        f"📞 {client_data['phone']}\n"
+        f"📧 {client_data['email']}\n"
+        f"🩹 Травмы: {client_data.get('injuries') or 'нет'}\n"
+        f"🎯 Цель: {client_data['goals']}\n\n"
         f"🏋️ Ваш тренер: <b>{trainer_name}</b>",
         parse_mode="HTML",
         reply_markup=client_menu()

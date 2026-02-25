@@ -75,16 +75,22 @@ async def trainer_email(message: Message, state: FSMContext):
 @router.message(TrainerRegistration.specialization)
 async def trainer_specialization(message: Message, state: FSMContext):
     data = await state.get_data()
-    data["specialization"] = message.text.strip()
-    data["registered"] = 1
-    await db.upsert_trainer(message.from_user.id, **data)
+    # Берём только те поля, которые есть в таблице trainers
+    trainer_data = {
+        "full_name": data.get("full_name"),
+        "phone": data.get("phone"),
+        "email": data.get("email"),
+        "specialization": message.text.strip(),
+        "registered": 1
+    }
+    await db.upsert_trainer(message.from_user.id, **trainer_data)
     await state.clear()
     await message.answer(
         f"✅ <b>Профиль тренера сохранён!</b>\n\n"
-        f"👤 {data['full_name']}\n"
-        f"📞 {data['phone']}\n"
-        f"📧 {data['email']}\n"
-        f"🏋️ {data['specialization']}",
+        f"👤 {trainer_data['full_name']}\n"
+        f"📞 {trainer_data['phone']}\n"
+        f"📧 {trainer_data['email']}\n"
+        f"🏋️ {trainer_data['specialization']}",
         parse_mode="HTML",
         reply_markup=trainer_menu()
     )
