@@ -260,7 +260,13 @@ async def times_done(call: CallbackQuery, state: FSMContext):
     if not times:
         await call.answer("Выберите хотя бы одно время!", show_alert=True)
         return
-    added = sum(1 for t in times if await db.add_slot(call.from_user.id, day, t))
+
+    # Подсчёт успешно добавленных слотов через цикл
+    added = 0
+    for t in times:
+        if await db.add_slot(call.from_user.id, day, t):
+            added += 1
+
     await state.clear()
     await call.message.edit_text(
         f"✅ Добавлено <b>{added}</b> слотов на <b>{day}</b>\n"
